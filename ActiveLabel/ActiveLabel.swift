@@ -13,7 +13,7 @@ public protocol ActiveLabelDelegate: class {
     func didSelectText(text: String, type: ActiveType)
 }
 
-typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveType)
+public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveType)
 
 @IBDesignable public class ActiveLabel: UILabel {
 
@@ -135,7 +135,28 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         layoutManager.drawBackgroundForGlyphRange(range, atPoint: newOrigin)
         layoutManager.drawGlyphsForGlyphRange(range, atPoint: newOrigin)
     }
+    
+    // MARK: - hooks for pre-parsed content
+    public func set(text text: String, withElements elements:[ActiveType: [ElementTuple]]) {
+        _customizing = true
+        super.text = text
+        activeElements = elements
+        _customizing = false
+        updateTextStorage(parseText: false)
+    }
 
+    public func set(attributedText text: NSAttributedString, withElements elements:[ActiveType: [ElementTuple]]) {
+        _customizing = true
+        self.text = text.string
+        attributedText = text
+        activeElements = elements
+        _customizing = false
+        // more optimization, more bugs
+//        textStorage.setAttributedString(text)
+//        setNeedsDisplay()
+        // less optimization, less bugs (nothing spotted yet)
+        updateTextStorage(parseText: false)
+    }
 
     // MARK: - customzation
     public func customize(block: (label: ActiveLabel) -> ()) -> ActiveLabel {
@@ -215,7 +236,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     private lazy var textStorage = NSTextStorage()
     private lazy var layoutManager = NSLayoutManager()
     private lazy var textContainer = NSTextContainer()
-    lazy var activeElements = [ActiveType: [ElementTuple]]()
+    public lazy var activeElements = [ActiveType: [ElementTuple]]()
 
     // MARK: - helper functions
     private func setupLabel() {

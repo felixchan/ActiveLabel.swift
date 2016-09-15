@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum ActiveElement {
+public enum ActiveElement {
     case Mention(String)
     case Hashtag(String)
     case URL(original: String, trimmed: String)
