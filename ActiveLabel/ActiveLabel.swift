@@ -33,16 +33,25 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     @IBInspectable open var mentionSelectedColor: UIColor? {
         didSet { updateTextStorage(parseText: false) }
     }
+    @IBInspectable open var mentionFont: UIFont? = nil {
+        didSet { updateTextStorage(parseText: false) }
+    }
     @IBInspectable open var hashtagColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
     }
     @IBInspectable open var hashtagSelectedColor: UIColor? {
         didSet { updateTextStorage(parseText: false) }
     }
+    @IBInspectable open var hashtagFont: UIFont? = nil {
+        didSet { updateTextStorage(parseText: false) }
+    }
     @IBInspectable open var URLColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
     }
     @IBInspectable open var URLSelectedColor: UIColor? {
+        didSet { updateTextStorage(parseText: false) }
+    }
+    @IBInspectable open var URLFont: UIFont? = nil {
         didSet { updateTextStorage(parseText: false) }
     }
     open var customColor: [ActiveType : UIColor] = [:] {
@@ -333,10 +342,17 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         for (type, elements) in activeElements {
 
             switch type {
-            case .mention: attributes[NSForegroundColorAttributeName] = mentionColor
-            case .hashtag: attributes[NSForegroundColorAttributeName] = hashtagColor
-            case .url: attributes[NSForegroundColorAttributeName] = URLColor
-            case .custom: attributes[NSForegroundColorAttributeName] = customColor[type] ?? defaultCustomColor
+            case .mention:
+                attributes[NSForegroundColorAttributeName] = mentionColor
+                attributes[NSFontAttributeName] = mentionFont ?? font!
+            case .hashtag:
+                attributes[NSForegroundColorAttributeName] = hashtagColor
+                attributes[NSFontAttributeName] = hashtagFont ?? font!
+            case .url:
+                attributes[NSForegroundColorAttributeName] = URLColor
+                attributes[NSFontAttributeName] = URLFont ?? font!
+            case .custom:
+                attributes[NSForegroundColorAttributeName] = customColor[type] ?? defaultCustomColor
             }
             
             if let highlightFont = hightlightFont {
