@@ -208,8 +208,15 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     // MARK: - Auto layout
 
     open override var intrinsicContentSize: CGSize {
+        // this size does not account for bold fonts because UILabel does not know about -
+        // its attributedText contains string with different formatting
         let superSize = super.intrinsicContentSize
-        textContainer.size = CGSize(width: superSize.width, height: CGFloat.greatestFiniteMagnitude)
+        return size(forWidth: superSize.width)
+    }
+    
+    // this method always returns correct size - it takes into account every font difference and line gap.
+    open func size(forWidth width: CGFloat) -> CGSize {
+        textContainer.size = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
         let size = layoutManager.usedRect(for: textContainer)
         return CGSize(width: ceil(size.width), height: ceil(size.height))
     }
@@ -307,9 +314,14 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         }
 
         addLinkAttribute(mutAttrString)
+        mutAttrString.fixAttributes(in: NSMakeRange(0, mutAttrString.length))
         textStorage.setAttributedString(mutAttrString)
         _customizing = true
-        text = mutAttrString.string
+//        text = mutAttrString.string
+        // do it, and ruin fonts - whole label will be bold when mentions is in
+        // don't do it, and ruin size - label will not know we have part of string bold.
+        // WTF
+//        self.attributedText = NSAttributedString(attributedString: mutAttrString)   // immutable copy
         _customizing = false
         setNeedsDisplay()
     }
