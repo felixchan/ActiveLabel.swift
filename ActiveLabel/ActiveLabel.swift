@@ -13,8 +13,7 @@ public protocol ActiveLabelDelegate: class {
     func didSelect(_ text: String, type: ActiveType)
 }
 
-public typealias ConfigureLinkAttribute = (ActiveType, [String : Any], Bool) -> ([String : Any])
-public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveType)
+public typealias ConfigureLinkAttribute = (ActiveType, [NSAttributedStringKey : Any], Bool) -> ([NSAttributedStringKey : Any])
 
 @IBDesignable open class ActiveLabel: UILabel {
     
@@ -33,16 +32,10 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     @IBInspectable open var mentionSelectedColor: UIColor? {
         didSet { updateTextStorage(parseText: false) }
     }
-    @IBInspectable open var mentionFont: UIFont? = nil {
-        didSet { updateTextStorage(parseText: false) }
-    }
     @IBInspectable open var hashtagColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
     }
     @IBInspectable open var hashtagSelectedColor: UIColor? {
-        didSet { updateTextStorage(parseText: false) }
-    }
-    @IBInspectable open var hashtagFont: UIFont? = nil {
         didSet { updateTextStorage(parseText: false) }
     }
     @IBInspectable open var URLColor: UIColor = .blue {
@@ -51,22 +44,22 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     @IBInspectable open var URLSelectedColor: UIColor? {
         didSet { updateTextStorage(parseText: false) }
     }
-    @IBInspectable open var URLFont: UIFont? = nil {
-        didSet { updateTextStorage(parseText: false) }
-    }
     open var customColor: [ActiveType : UIColor] = [:] {
         didSet { updateTextStorage(parseText: false) }
     }
     open var customSelectedColor: [ActiveType : UIColor] = [:] {
         didSet { updateTextStorage(parseText: false) }
     }
-    @IBInspectable open var lineSpacing: Float = 0 {
+    @IBInspectable public var lineSpacing: CGFloat = 0 {
+        didSet { updateTextStorage(parseText: false) }
+    }
+    @IBInspectable public var minimumLineHeight: CGFloat = 0 {
         didSet { updateTextStorage(parseText: false) }
     }
     @IBInspectable public var highlightFontName: String? = nil {
         didSet { updateTextStorage(parseText: false) }
     }
-    @IBInspectable public var highlightFontSize: CGFloat? = nil {
+    public var highlightFontSize: CGFloat? = nil {
         didSet { updateTextStorage(parseText: false) }
     }
     
@@ -172,28 +165,7 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         layoutManager.drawBackground(forGlyphRange: range, at: newOrigin)
         layoutManager.drawGlyphs(forGlyphRange: range, at: newOrigin)
     }
-    
-    // MARK: - hooks for pre-parsed content
-    public func set(text text: String, withElements elements:[ActiveType: [ElementTuple]]) {
-        _customizing = true
-        super.text = text
-        activeElements = elements
-        _customizing = false
-        updateTextStorage(parseText: false)
-    }
 
-    public func set(attributedText text: NSAttributedString, withElements elements:[ActiveType: [ElementTuple]]) {
-        _customizing = true
-        self.text = text.string
-        attributedText = text
-        activeElements = elements
-        _customizing = false
-        // more optimization, more bugs
-//        textStorage.setAttributedString(text)
-//        setNeedsDisplay()
-        // less optimization, less bugs (nothing spotted yet)
-        updateTextStorage(parseText: false)
-    }
 
     // MARK: - customzation
     @discardableResult
@@ -208,15 +180,7 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     // MARK: - Auto layout
 
     open override var intrinsicContentSize: CGSize {
-        // this size does not account for bold fonts because UILabel does not know about -
-        // its attributedText contains string with different formatting
         let superSize = super.intrinsicContentSize
-        return size(forWidth: superSize.width)
-    }
-    
-    // this method always returns correct size - it takes into account every font difference and line gap.
-    open func size(forWidth width: CGFloat) -> CGSize {
-        textContainer.size = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
         let size = layoutManager.usedRect(for: textContainer)
         return CGSize(width: ceil(size.width), height: ceil(size.height))
     }
@@ -282,7 +246,6 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     internal lazy var textStorage = NSTextStorage()
     fileprivate lazy var layoutManager = NSLayoutManager()
     fileprivate lazy var textContainer = NSTextContainer()
-    public lazy var activeElements = [ActiveType: [ElementTuple]]()
 
     // MARK: - helper functions
     
@@ -314,14 +277,8 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         }
 
         addLinkAttribute(mutAttrString)
-        mutAttrString.fixAttributes(in: NSMakeRange(0, mutAttrString.length))
         textStorage.setAttributedString(mutAttrString)
         _customizing = true
-//        text = mutAttrString.string
-        // do it, and ruin fonts - whole label will be bold when mentions is in
-        // don't do it, and ruin size - label will not know we have part of string bold.
-        // WTF
-//        self.attributedText = NSAttributedString(attributedString: mutAttrString)   // immutable copy
         _customizing = false
         setNeedsDisplay()
     }
@@ -345,30 +302,23 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         var range = NSRange(location: 0, length: 0)
         var attributes = mutAttrString.attributes(at: 0, effectiveRange: &range)
         
-        attributes[NSFontAttributeName] = font!
-        attributes[NSForegroundColorAttributeName] = textColor
+        attributes[NSAttributedStringKey.font] = font!
+        attributes[NSAttributedStringKey.foregroundColor] = textColor
         mutAttrString.addAttributes(attributes, range: range)
 
-        attributes[NSForegroundColorAttributeName] = mentionColor
+        attributes[NSAttributedStringKey.foregroundColor] = mentionColor
 
         for (type, elements) in activeElements {
 
             switch type {
-            case .mention:
-                attributes[NSForegroundColorAttributeName] = mentionColor
-                attributes[NSFontAttributeName] = mentionFont ?? font!
-            case .hashtag:
-                attributes[NSForegroundColorAttributeName] = hashtagColor
-                attributes[NSFontAttributeName] = hashtagFont ?? font!
-            case .url:
-                attributes[NSForegroundColorAttributeName] = URLColor
-                attributes[NSFontAttributeName] = URLFont ?? font!
-            case .custom:
-                attributes[NSForegroundColorAttributeName] = customColor[type] ?? defaultCustomColor
+            case .mention: attributes[NSAttributedStringKey.foregroundColor] = mentionColor
+            case .hashtag: attributes[NSAttributedStringKey.foregroundColor] = hashtagColor
+            case .url: attributes[NSAttributedStringKey.foregroundColor] = URLColor
+            case .custom: attributes[NSAttributedStringKey.foregroundColor] = customColor[type] ?? defaultCustomColor
             }
             
             if let highlightFont = hightlightFont {
-                attributes[NSFontAttributeName] = highlightFont
+                attributes[NSAttributedStringKey.font] = highlightFont
             }
 			
             if let configureLinkAttribute = configureLinkAttribute {
@@ -419,12 +369,12 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         var range = NSRange(location: 0, length: 0)
         var attributes = mutAttrString.attributes(at: 0, effectiveRange: &range)
         
-        let paragraphStyle = attributes[NSParagraphStyleAttributeName] as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+        let paragraphStyle = attributes[NSAttributedStringKey.paragraphStyle] as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
         paragraphStyle.lineBreakMode = NSLineBreakMode.byWordWrapping
         paragraphStyle.alignment = textAlignment
-        paragraphStyle.lineSpacing = CGFloat(lineSpacing)
-
-        attributes[NSParagraphStyleAttributeName] = paragraphStyle
+        paragraphStyle.lineSpacing = lineSpacing
+        paragraphStyle.minimumLineHeight = minimumLineHeight > 0 ? minimumLineHeight: self.font.pointSize * 1.14
+        attributes[NSAttributedStringKey.paragraphStyle] = paragraphStyle
         mutAttrString.setAttributes(attributes, range: range)
 
         return mutAttrString
@@ -448,7 +398,7 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
                 let possibleSelectedColor = customSelectedColor[selectedElement.type] ?? customColor[selectedElement.type]
                 selectedColor = possibleSelectedColor ?? defaultCustomColor
             }
-            attributes[NSForegroundColorAttributeName] = selectedColor
+            attributes[NSAttributedStringKey.foregroundColor] = selectedColor
         } else {
             let unselectedColor: UIColor
             switch type {
@@ -457,11 +407,11 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
             case .url: unselectedColor = URLColor
             case .custom: unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
             }
-            attributes[NSForegroundColorAttributeName] = unselectedColor
+            attributes[NSAttributedStringKey.foregroundColor] = unselectedColor
         }
         
         if let highlightFont = hightlightFont {
-            attributes[NSFontAttributeName] = highlightFont
+            attributes[NSAttributedStringKey.font] = highlightFont
         }
         
         if let configureLinkAttribute = configureLinkAttribute {
