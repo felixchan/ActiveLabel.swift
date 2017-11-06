@@ -14,6 +14,7 @@ public protocol ActiveLabelDelegate: class {
 }
 
 public typealias ConfigureLinkAttribute = (ActiveType, [NSAttributedStringKey : Any], Bool) -> ([NSAttributedStringKey : Any])
+typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveType)
 
 @IBDesignable open class ActiveLabel: UILabel {
     
@@ -181,6 +182,7 @@ public typealias ConfigureLinkAttribute = (ActiveType, [NSAttributedStringKey : 
 
     open override var intrinsicContentSize: CGSize {
         let superSize = super.intrinsicContentSize
+        textContainer.size = CGSize(width: superSize.width, height: CGFloat.greatestFiniteMagnitude)
         let size = layoutManager.usedRect(for: textContainer)
         return CGSize(width: ceil(size.width), height: ceil(size.height))
     }
@@ -246,6 +248,7 @@ public typealias ConfigureLinkAttribute = (ActiveType, [NSAttributedStringKey : 
     internal lazy var textStorage = NSTextStorage()
     fileprivate lazy var layoutManager = NSLayoutManager()
     fileprivate lazy var textContainer = NSTextContainer()
+    lazy var activeElements = [ActiveType: [ElementTuple]]()
 
     // MARK: - helper functions
     
@@ -279,6 +282,7 @@ public typealias ConfigureLinkAttribute = (ActiveType, [NSAttributedStringKey : 
         addLinkAttribute(mutAttrString)
         textStorage.setAttributedString(mutAttrString)
         _customizing = true
+        text = mutAttrString.string
         _customizing = false
         setNeedsDisplay()
     }
