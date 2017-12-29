@@ -26,6 +26,8 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     open var urlMaximumLength: Int?
     
     open var configureLinkAttribute: ConfigureLinkAttribute?
+    
+    open var colorForElement: ((ElementTuple) -> UIColor?)? = nil
 
     @IBInspectable open var mentionColor: UIColor = .blue {
         didSet { updateTextStorage(parseText: false) }
@@ -389,6 +391,9 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
             }
 
             for element in elements {
+                if let specificColor = colorForElement?(element) {
+                    attributes[.foregroundColor] = specificColor
+                }
                 mutAttrString.setAttributes(attributes, range: element.range)
             }
         }
