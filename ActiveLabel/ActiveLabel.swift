@@ -458,24 +458,43 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
 
         if isSelected {
             let selectedColor: UIColor
+            let selectedFont: UIFont
             switch type {
-            case .mention: selectedColor = mentionSelectedColor ?? mentionColor
-            case .hashtag: selectedColor = hashtagSelectedColor ?? hashtagColor
-            case .url: selectedColor = URLSelectedColor ?? URLColor
+            case .mention:
+                selectedColor = mentionSelectedColor ?? mentionColor
+                selectedFont = mentionFont ?? font
+            case .hashtag:
+                selectedColor = hashtagSelectedColor ?? hashtagColor
+                selectedFont = hashtagFont ?? font
+            case .url:
+                selectedColor = URLSelectedColor ?? URLColor
+                selectedFont = URLFont ?? font
             case .custom:
                 let possibleSelectedColor = customSelectedColor[selectedElement.type] ?? customColor[selectedElement.type]
                 selectedColor = possibleSelectedColor ?? defaultCustomColor
+                selectedFont = font
             }
-            attributes[NSAttributedStringKey.foregroundColor] = selectedColor
+            attributes[.foregroundColor] = selectedColor
+            attributes[.font] = selectedFont
         } else {
             let unselectedColor: UIColor
+            let unselectedFont: UIFont
             switch type {
-            case .mention: unselectedColor = mentionColor
-            case .hashtag: unselectedColor = hashtagColor
-            case .url: unselectedColor = URLColor
-            case .custom: unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
+            case .mention:
+                unselectedColor = mentionColor
+                unselectedFont = mentionFont ?? font
+            case .hashtag:
+                unselectedColor = hashtagColor
+                unselectedFont = hashtagFont ?? font
+            case .url:
+                unselectedColor = URLColor
+                unselectedFont = URLFont ?? font
+            case .custom:
+                unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
+                unselectedFont = font
             }
-            attributes[NSAttributedStringKey.foregroundColor] = unselectedColor
+            attributes[.foregroundColor] = unselectedColor
+            attributes[.font] = unselectedFont
         }
         
         if let highlightFont = hightlightFont {
