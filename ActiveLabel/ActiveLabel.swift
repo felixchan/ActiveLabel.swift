@@ -204,9 +204,10 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     @discardableResult
     open func customize(_ block: (_ label: ActiveLabel) -> ()) -> ActiveLabel {
         _customizing = true
+        _reparseAfterCustomizing = false
         block(self)
         _customizing = false
-        updateTextStorage()
+        updateTextStorage(parseText: _reparseAfterCustomizing)
         return self
     }
 
@@ -287,6 +288,7 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
 
     // MARK: - private properties
     fileprivate var _customizing: Bool = true
+    fileprivate var _reparseAfterCustomizing: Bool = false
     fileprivate var defaultCustomColor: UIColor = .black
     
     internal var mentionTapHandler: ((String) -> ())?
@@ -316,7 +318,10 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
     }
 
     fileprivate func updateTextStorage(parseText: Bool = true) {
-        if _customizing { return }
+        if _customizing {
+            _reparseAfterCustomizing = _reparseAfterCustomizing || parseText        // optimize reparsing on label customization
+            return
+        }
         // clean up previous active elements
         guard let attributedText = attributedText, attributedText.length > 0 else {
             clearActiveElements()
@@ -334,10 +339,10 @@ public typealias ElementTuple = (range: NSRange, element: ActiveElement, type: A
         }
 
         addLinkAttribute(mutAttrString)
-        textStorage.setAttributedString(mutAttrString)
         _customizing = true
         text = mutAttrString.string
         _customizing = false
+        textStorage.setAttributedString(mutAttrString)
         setNeedsDisplay()
     }
 
